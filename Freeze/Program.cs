@@ -107,7 +107,11 @@ namespace Freeze
                 var data = Process.GetProcesses();
                 kr.pro.MaxValue = data.Length;
                 int i = 0;
-                foreach (var p in data) { try { if (p.ProcessName != "Freeze") ProcessMgr.ResumeProcess(p.Id); kr.label1.Text = "Freezing:" + p.ProcessName; kr.pro.Value = i; i++; await Task.Delay(300); } catch { } }
+                foreach (var p in data) { try { if (p.ProcessName != "Freeze") {
+                            ProcessMgr.SuspendProcess(p.Id);
+                            kr.label1.Text = "Freezing:" + p.ProcessName;
+                            kr.pro.Value = i; i++; await Task.Delay(100);
+                        } } catch { } }
                 Environment.Exit(0);
             };
             kr.ShowDialog();
